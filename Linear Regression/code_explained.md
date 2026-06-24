@@ -59,9 +59,31 @@ These plots let you sanity-check that assumption before trusting the model.
 ```
 
 ![Correlation Heatmap](images/01_correlation_heatmap.png)
+What it shows: MRT distance has the strongest correlation with price
+(-0.67, dark blue) — the farther from MRT, the lower the price. Number
+of convenience stores (+0.57), latitude (+0.55), and longitude (+0.52)
+are next strongest. House age is weak (-0.21) and transaction date is
+almost zero (0.087) — barely related to price at all.
+
 ![House Age vs Price](images/02_house_age_vs_price.png)
+What it shows: a wide, scattered cloud with no clean line — prices for
+0-year-old houses range from ~38 to ~74, and 30-year-old houses still
+sell anywhere from ~13 to ~55. House age alone doesn't pin down price
+well; the relationship is real but weak (matches its -0.21 correlation).
+
 ![MRT Distance vs Price](images/03_mrt_distance_vs_price.png)
+What it shows: a curve, not a straight line. Prices drop sharply as
+distance increases from 0 to ~1000, then flatten out — past ~2000,
+more distance barely changes price further. This is the underfitting
+clue from step 12: a straight-line model can't fully capture this
+curved shape.
+
 ![Convenience Stores vs Price](images/04_convenience_stores_vs_price.png)
+What it shows: median price (the line inside each box) generally climbs
+as store count goes from 0 to 9 — 0 stores has a median around 22,
+while 9 stores is around 50. Boxes also include outlier dots (e.g. the
+117.5 price outlier near 1 store), confirming this is the figure
+skewing the dataset's max value.
 
 ```
 6. FEATURE ENGINEERING
@@ -172,6 +194,10 @@ The amount of scatter around that line shows you how wrong the model is.
 ```
 
 ![Actual vs Predicted](images/05_actual_vs_predicted.png)
+What it shows: points roughly follow the diagonal (good — predictions
+track actual prices), but there's real scatter, especially at the low
+end (actual ~12 predicted near 0) and a few low-actual/high-predicted
+misses around actual 30. The fit is decent but clearly imperfect.
 
 ```
 15. RESIDUAL ANALYSIS
@@ -186,6 +212,10 @@ data.
 ```
 
 ![Residual Plot](images/06_residual_plot.png)
+What it shows: residuals scatter fairly randomly around the red zero
+line for most predicted prices (0-50), which is good. But there's a
+cluster of large positive outliers (+12, +23, +27) near predicted
+price 35-40 — a few specific houses the model badly underpredicted.
 
 ```
 16. RESIDUAL DISTRIBUTION
@@ -196,6 +226,10 @@ linear regression relies on for its results to be trustworthy.
 ```
 
 ![Residual Distribution](images/07_residual_distribution.png)
+What it shows: mostly bell-shaped and centered near 0, which is good —
+but it's not perfectly symmetric. There's a small tail of residuals
+out past +20 (matching the underprediction outliers from the residual
+plot above), pulling the distribution slightly right of center.
 
 ```
 17. FEATURE IMPORTANCE
@@ -224,6 +258,11 @@ glance which features matter most.
 ```
 
 ![Feature Importance](images/08_feature_importance.png)
+What it shows: bars sorted by effect size, with MRT distance's bar
+clearly the longest (and negative, pointing left) — visually confirming
+it dominates the prediction. Convenience stores and latitude have the
+longest positive bars. Longitude's bar is barely visible, confirming
+it's nearly irrelevant to the model.
 
 ```
 THE BIG PICTURE

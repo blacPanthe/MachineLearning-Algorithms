@@ -77,9 +77,28 @@ separate the two classes before you trust the model's results.
 ```
 
 ![Class Balance](images/01_class_balance.png)
+What it shows: 357 benign (0) cases vs 212 malignant (1) cases — not
+perfectly even, but not severely imbalanced either (roughly 63%/37%).
+This is mild enough that accuracy is still a reasonably trustworthy
+metric, but it's also why stratify=y in the split (step 7) matters.
+
 ![Correlation Heatmap](images/02_correlation_heatmap.png)
+What it shows: a strong red block among radius_mean, perimeter_mean,
+area_mean, and their "worst" versions — these all measure size and
+move together almost perfectly (correlation near 1.0), which is
+multicollinearity. The diagnosis row (top) is also notably red against
+those same size features, confirming they're strong predictors.
+
 ![Mean Radius vs Diagnosis](images/03_mean_radius_vs_diagnosis.png)
+What it shows: a clean separation — benign tumors (0) cluster around a
+median radius of ~12, while malignant tumors (1) cluster around ~17,
+with almost no overlap between the two boxes. This single feature
+alone visually distinguishes the classes fairly well.
+
 ![Mean Texture vs Diagnosis](images/04_mean_texture_vs_diagnosis.png)
+What it shows: benign (0) centers around texture ~17, malignant (1)
+around ~21 — a real difference, but the boxes overlap much more than
+the radius chart above. Texture alone is a weaker signal than radius.
 
 ```
 6. FEATURE ENGINEERING
@@ -211,6 +230,11 @@ any real diagnostic setting.
 ```
 
 ![Confusion Matrix](images/05_confusion_matrix.png)
+What it shows, out of 114 test cases: 71 benign correctly caught, 39
+malignant correctly caught, 1 benign misclassified as malignant (false
+positive), and 3 malignant misclassified as benign (false negatives —
+the more dangerous mistake type). This matches the recall of 0.929:
+3 missed out of 42 actual malignant cases.
 
 ```
 15. ROC CURVE
@@ -230,6 +254,11 @@ confusion matrix above missed a few.
 ```
 
 ![ROC Curve](images/06_roc_curve.png)
+What it shows: the curve shoots up almost immediately to a true
+positive rate near 0.93-0.98 while the false positive rate is still
+near 0, then hugs the top of the chart the rest of the way — it's
+nearly hugging the top-left corner, which is why AUC = 0.996. It sits
+far above the red diagonal (random guessing) across the entire range.
 
 ```
 16. FEATURE IMPORTANCE
@@ -261,6 +290,11 @@ to see at a glance which measurements matter most for this diagnosis.
 ```
 
 ![Feature Importance](images/07_feature_importance.png)
+What it shows: texture_worst has the longest bar (~1.4, pointing
+right/malignant), and most top-10 bars point right (toward malignant).
+The one clear exception is compactness_se, whose bar points left
+(~-0.9) — meaning higher compactness error actually pushes the
+prediction toward benign, the opposite direction of most other features.
 
 ```
 THE BIG PICTURE
