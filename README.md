@@ -2,8 +2,6 @@
 
 Mini-projects exploring machine learning algorithms — each folder has the code and an interactive notes page.
 
-🔗 **Live site:** https://blacpanthe.github.io/MachineLearning-Algorithms/
-
 ## Projects
 
 - [Linear Regression](Linear%20Regression/) — code + [notes](https://blacpanthe.github.io/MachineLearning-Algorithms/Linear%20Regression/notes.html)
