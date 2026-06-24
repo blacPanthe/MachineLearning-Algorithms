@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Logistic Regression — Notes Explainer</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8f9fa; color: #1a1a1a; padding: 24px 16px; max-width: 720px; margin: 0 auto; }
+  h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 4px; }
+  .subtitle { font-size: 0.85rem; color: #888; margin-bottom: 20px; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
+  .tab { padding: 6px 14px; border-radius: 20px; border: 1.5px solid #ddd; background: #fff; font-size: 0.78rem; cursor: pointer; color: #444; font-weight: 500; transition: all 0.15s; }
+  .tab.active { background: #7c3aed; color: #fff; border-color: #7c3aed; }
+  .tab:hover:not(.active) { border-color: #7c3aed; color: #7c3aed; }
+  .section { display: none; }
+  .section.active { display: block; }
+  .card { background: #fff; border-radius: 12px; padding: 18px; margin-bottom: 14px; border: 1px solid #e8e8e8; }
+  .card h2 { font-size: 1rem; font-weight: 700; margin-bottom: 10px; color: #7c3aed; }
+  .card p { font-size: 0.85rem; line-height: 1.6; color: #444; margin-bottom: 6px; }
+  .formula { background: #f5f3ff; border-left: 3px solid #7c3aed; border-radius: 6px; padding: 10px 14px; font-family: 'Courier New', monospace; font-size: 0.88rem; color: #4c1d95; margin: 10px 0; }
+  .note-quote { background: #fef9c3; border-left: 3px solid #eab308; border-radius: 6px; padding: 10px 14px; font-size: 0.82rem; color: #78350f; margin: 10px 0; font-style: italic; }
+  .tag { display: inline-block; padding: 3px 10px; border-radius: 10px; font-size: 0.72rem; font-weight: 600; margin: 2px; }
+  .tag.good { background: #dcfce7; color: #166534; }
+  .tag.bad { background: #fee2e2; color: #991b1b; }
+  .tag.neutral { background: #ede9fe; color: #5b21b6; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .mini-card { background: #f8f9fa; border: 1px solid #eee; border-radius: 10px; padding: 12px; }
+  .mini-card h3 { font-size: 0.82rem; font-weight: 700; color: #7c3aed; margin-bottom: 5px; }
+  .mini-card p { font-size: 0.78rem; color: #444; line-height: 1.4; }
+  .sigmoid-wrap { display: flex; justify-content: center; margin: 12px 0; }
+  /* Confusion matrix */
+  .cm-grid { display: grid; grid-template-columns: 80px 1fr 1fr; grid-template-rows: 30px 1fr 1fr; gap: 4px; max-width: 300px; margin: 12px auto; font-size: 0.78rem; }
+  .cm-header { background: #7c3aed; color: white; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: 700; padding: 4px; }
+  .cm-label { display: flex; align-items: center; justify-content: center; font-weight: 600; color: #444; font-size: 0.74rem; }
+  .cm-tp { background: #dcfce7; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-direction: column; padding: 12px 4px; font-weight: 700; color: #166534; }
+  .cm-fp { background: #fef2f2; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-direction: column; padding: 12px 4px; font-weight: 700; color: #dc2626; }
+  .cm-fn { background: #fef2f2; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-direction: column; padding: 12px 4px; font-weight: 700; color: #dc2626; }
+  .cm-tn { background: #dcfce7; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-direction: column; padding: 12px 4px; font-weight: 700; color: #166534; }
+  .cm-sub { font-size: 0.64rem; font-weight: 400; margin-top: 2px; }
+  .steps { }
+  .step { display: flex; gap: 12px; margin-bottom: 12px; align-items: flex-start; }
+  .step-num { background: #7c3aed; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .step-body { font-size: 0.85rem; color: #444; line-height: 1.5; }
+  .step-body strong { color: #1a1a1a; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-top: 10px; }
+  th { background: #7c3aed; color: white; padding: 8px 12px; text-align: left; font-weight: 600; }
+  td { padding: 8px 12px; border-bottom: 1px solid #eee; color: #444; }
+  tr:last-child td { border-bottom: none; }
+  pre { background: #1e1b4b; color: #c4b5fd; border-radius: 10px; padding: 14px; font-size: 0.78rem; overflow-x: auto; margin: 10px 0; line-height: 1.7; }
+  pre .kw { color: #a5b4fc; }
+  pre .fn { color: #6ee7b7; }
+  pre .str { color: #fbbf24; }
+  pre .cm-code { color: #818cf8; }
+  .auc-bar { background: linear-gradient(to right, #fee2e2, #fef9c3, #dcfce7); border-radius: 8px; height: 22px; margin: 12px 0 32px; position: relative; }
+  .auc-marker { position: absolute; top: -4px; width: 2px; height: 30px; background: #7c3aed; }
+  .auc-label { position: absolute; top: 30px; font-size: 0.68rem; color: #7c3aed; font-weight: 700; transform: translateX(-50%); white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<h1>📒 Logistic Regression — From Your Notes</h1>
+<p class="subtitle">An interactive explainer based on handwritten notes</p>
+
+<div class="tabs">
+  <div class="tab active" onclick="show('why', this)">Why Log Reg?</div>
+  <div class="tab" onclick="show('sigmoid', this)">Sigmoid</div>
+  <div class="tab" onclick="show('cost', this)">Cost Function</div>
+  <div class="tab" onclick="show('confusion', this)">Confusion Matrix</div>
+  <div class="tab" onclick="show('metrics', this)">Precision &amp; Recall</div>
+  <div class="tab" onclick="show('fscore', this)">F-Score</div>
+  <div class="tab" onclick="show('roc', this)">ROC &amp; AUC</div>
+  <div class="tab" onclick="show('code', this)">sklearn Code</div>
+</div>
+
+<!-- WHY LOGISTIC REGRESSION -->
+<div id="why" class="section active">
+  <div class="card">
+    <h2>Why Not Linear Regression for Classification?</h2>
+    <p>Your notes used student pass/fail (Pass=1, Fail=0) as the example:</p>
+    <div class="formula">Linear Regression gives: 1.4  ← what does that even mean?
+Or: −0.3  ← negative probability, impossible!</div>
+    <p>Linear Regression predicts values <strong>below 0 and above 1</strong>. Probability must stay between 0 and 1 — so linear regression fails here.</p>
+  </div>
+  <div class="card">
+    <h2>Logistic Regression Fixes This</h2>
+    <p><span class="tag good">Always outputs between 0 and 1</span></p>
+    <p style="margin-top:8px;">Instead of predicting a value directly, it predicts <strong>probability</strong>.</p>
+    <div class="note-quote">Sigmoid is a probability machine. It converts any number into a probability between 0 and 1.</div>
+    <div class="two-col" style="margin-top:10px;">
+      <div class="mini-card"><h3>Linear Regression</h3><p>Input → Number (can be anything)</p></div>
+      <div class="mini-card"><h3>Logistic Regression</h3><p>Input → Probability (always 0–1)</p></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Threshold — Making the Decision</h2>
+    <div class="formula">Default threshold = 0.5
+Probability &gt; 0.5  →  Yes (1)
+Probability &lt; 0.5  →  No (0)</div>
+    <p>Example: P = 0.80 → 80% chance Yes. P = 0.20 → 20% chance No.</p>
+  </div>
+  <div class="card">
+    <h2>Coefficients — Loan Approval Example</h2>
+    <div class="formula">Income coefficient = +2.5  → increases approval chance
+Debt coefficient   = −3.0  → decreases approval chance</div>
+    <p>Coefficients represent the change in <strong>log-odds</strong> for a one-unit increase in the predictor.</p>
+  </div>
+</div>
+
+<!-- SIGMOID -->
+<div id="sigmoid" class="section">
+  <div class="card">
+    <h2>The Sigmoid Function</h2>
+    <div class="formula">h_θ(x) = 1 / (1 + e^(−z))</div>
+    <p>It "squashes" any real number into a value between 0 and 1.</p>
+    <div class="sigmoid-wrap">
+      <svg viewBox="0 0 300 150" width="300" height="150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sigmoid curve showing S-shape from 0 to 1">
+        <line x1="20" y1="75" x2="280" y2="75" stroke="#ddd" stroke-width="1.5"/>
+        <line x1="150" y1="10" x2="150" y2="140" stroke="#ddd" stroke-width="1.5"/>
+        <line x1="20" y1="120" x2="280" y2="120" stroke="#e5e7eb" stroke-dasharray="4,3" stroke-width="1"/>
+        <line x1="20" y1="30" x2="280" y2="30" stroke="#e5e7eb" stroke-dasharray="4,3" stroke-width="1"/>
+        <text x="10" y="123" fill="#9ca3af" font-size="10">0</text>
+        <text x="10" y="33" fill="#9ca3af" font-size="10">1</text>
+        <path d="M20,119 C55,118 85,112 108,103 C122,97 135,84 150,75 C165,66 178,53 192,47 C215,38 245,32 280,31" fill="none" stroke="#7c3aed" stroke-width="2.5"/>
+        <circle cx="150" cy="75" r="4.5" fill="#7c3aed"/>
+        <text x="156" y="71" fill="#7c3aed" font-size="10" font-weight="bold">0.5</text>
+        <text x="268" y="73" fill="#6b7280" font-size="10">z</text>
+        <text x="154" y="18" fill="#6b7280" font-size="10">g(z)</text>
+        <text x="162" y="92" fill="#7c3aed" font-size="9">g(z) &gt; 0.5</text>
+        <text x="162" y="103" fill="#7c3aed" font-size="9">when z ≥ 0</text>
+      </svg>
+    </div>
+    <p style="font-size:0.82rem; color:#444;">g(z) &gt; 0.5 when z ≥ 0 → predict class 1. g(z) &lt; 0.5 when z &lt; 0 → predict class 0.</p>
+  </div>
+  <div class="card">
+    <h2>Non-Convex → Convex via Sigmoid</h2>
+    <p>Your notes drew two curves — this is crucial. The raw cost surface for logistic regression is <strong>non-convex</strong> (many valleys), which would cause gradient descent to get stuck in local minima.</p>
+    <p style="margin-top:8px;">Applying the sigmoid + log loss transforms it into a <strong>convex function</strong> with a single global minimum — gradient descent always finds it.</p>
+  </div>
+</div>
+
+<!-- COST FUNCTION -->
+<div id="cost" class="section">
+  <div class="card">
+    <h2>Why Not MSE for Logistic Regression?</h2>
+    <p>Linear Regression uses MSE. Logistic Regression uses <strong>Log Loss (Cross Entropy Loss)</strong>.</p>
+    <div class="note-quote">Probabilities behave differently than numerical predictions. Wrong predictions should be punished heavily.</div>
+  </div>
+  <div class="card">
+    <h2>The Cost Function</h2>
+    <p>Two cases from your notes:</p>
+    <div class="formula">If y = 1:  Cost = −log(h_θ(x))
+If y = 0:  Cost = −log(1 − h_θ(x))</div>
+    <p style="margin-top:10px;">Combined into one formula (the one you boxed in red):</p>
+    <div class="formula">Cost = −y·log(h_θ(xⁱ)) − (1−y)·log(1 − h_θ(xⁱ))</div>
+    <p style="font-size:0.8rem; color:#444; margin-top:8px;">When y=1, the second term vanishes. When y=0, the first term vanishes. Both cases collapse into one elegant formula.</p>
+  </div>
+  <div class="card">
+    <h2>Intuition — Why Log?</h2>
+    <div class="two-col">
+      <div class="mini-card"><h3>y=1, predict 1</h3><p>−log(1) = 0 ✓<br>No penalty</p></div>
+      <div class="mini-card"><h3>y=1, predict 0</h3><p>−log(0) = ∞ ✗<br>Huge penalty</p></div>
+    </div>
+    <p style="margin-top:10px; font-size:0.82rem;">Being <strong>confident and wrong</strong> is punished extremely hard.</p>
+  </div>
+  <div class="card">
+    <h2>Gradient Descent for Logistic Regression</h2>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div class="step-body"><strong>Find error</strong> — compare prediction to actual</div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-body"><strong>Reduce error</strong> — compute gradient of log loss</div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-body"><strong>Update coefficients</strong> — step in direction of lower cost</div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-body"><strong>Repeat</strong> until convergence</div></div>
+    </div>
+    <p style="font-size:0.8rem; color:#444; margin-top:6px;">Same three ingredients as linear regression: Gradient Descent, Learning Rate, Convergence.</p>
+  </div>
+</div>
+
+<!-- CONFUSION MATRIX -->
+<div id="confusion" class="section">
+  <div class="card">
+    <h2>Confusion Matrix</h2>
+    <p>Used when predictions are <strong>categories</strong>, not numbers.</p>
+    <div class="cm-grid">
+      <div></div>
+      <div class="cm-header">Actual Yes</div>
+      <div class="cm-header">Actual No</div>
+      <div class="cm-header">Pred Yes</div>
+      <div class="cm-tp">TP<div class="cm-sub">True Positive</div></div>
+      <div class="cm-fp">FP<div class="cm-sub">False Positive</div></div>
+      <div class="cm-header">Pred No</div>
+      <div class="cm-fn">FN<div class="cm-sub">False Negative</div></div>
+      <div class="cm-tn">TN<div class="cm-sub">True Negative</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>The 4 Cells Explained</h2>
+    <table>
+      <tr><th>Cell</th><th>Meaning</th></tr>
+      <tr><td><strong>TP</strong></td><td>Actual Yes, Predicted Yes ✓</td></tr>
+      <tr><td><strong>TN</strong></td><td>Actual No, Predicted No ✓</td></tr>
+      <tr><td><strong>FP</strong></td><td>Actual No, Predicted Yes ✗ (False alarm)</td></tr>
+      <tr><td><strong>FN</strong></td><td>Actual Yes, Predicted No ✗ (Missed it)</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h2>Accuracy</h2>
+    <div class="formula">Accuracy = (TP + TN) / (TP + FP + FN + TN)</div>
+    <p>Your example: (3+1)/(3+2+1+1) = 4/7 = <strong>57%</strong></p>
+    <p style="margin-top:10px;"><span class="tag bad">Problem with accuracy:</span> If 0→900 and 1→100 (imbalanced), a model predicting all 0s scores 90% accuracy but is completely useless.</p>
+    <p style="margin-top:6px;">For imbalanced data → use <strong>Precision, Recall, F-score</strong> instead.</p>
+  </div>
+</div>
+
+<!-- PRECISION & RECALL -->
+<div id="metrics" class="section">
+  <div class="card">
+    <h2>Precision vs Recall</h2>
+    <div class="two-col">
+      <div class="mini-card">
+        <h3>Precision</h3>
+        <div class="formula" style="font-size:0.8rem; padding:7px 10px;">TP / (TP + FP)</div>
+        <p><strong>Trustworthiness</strong> — of all things I predicted positive, how many actually are?</p>
+        <p style="margin-top:5px; font-size:0.74rem; color:#888;">FP is the enemy</p>
+      </div>
+      <div class="mini-card">
+        <h3>Recall</h3>
+        <div class="formula" style="font-size:0.8rem; padding:7px 10px;">TP / (TP + FN)</div>
+        <p><strong>Detection power</strong> — of all actual positives, how many did I catch?</p>
+        <p style="margin-top:5px; font-size:0.74rem; color:#888;">FN is the enemy</p>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Real-World Examples from Your Notes</h2>
+    <table>
+      <tr><th>Situation</th><th>Use</th><th>Why</th></tr>
+      <tr><td>Cancer detection</td><td><span class="tag good">Recall</span></td><td>Missing cancer is dangerous — catch every case (FN is costly)</td></tr>
+      <tr><td>Spam filter</td><td><span class="tag neutral">Precision</span></td><td>Wrongly blocking real emails is bad — don't false alarm (FP is costly)</td></tr>
+      <tr><td>Stock market crash</td><td><span class="tag good">Both</span></td><td>Both false alarms and missed crashes matter</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h2>The Trade-off</h2>
+    <p>Increasing recall often decreases precision and vice versa. That's why we need a way to balance them → <strong>F-Score</strong>.</p>
+  </div>
+</div>
+
+<!-- F-SCORE -->
+<div id="fscore" class="section">
+  <div class="card">
+    <h2>F-Score Formula</h2>
+    <div class="formula">F_β = (1 + β²) × (Precision × Recall) / (β² × Precision + Recall)</div>
+    <p style="margin-top:8px;">β controls which you care about more: FP or FN.</p>
+  </div>
+  <div class="card">
+    <h2>Three Common F-Scores</h2>
+    <table>
+      <tr><th>Score</th><th>β</th><th>Focus</th><th>When to use</th></tr>
+      <tr><td><strong>F0.5</strong></td><td>0.5</td><td>FP &gt;&gt; FN</td><td>Precision matters more (e.g. spam filter)</td></tr>
+      <tr><td><strong>F1</strong></td><td>1</td><td>FP = FN</td><td>Both equally important</td></tr>
+      <tr><td><strong>F2</strong></td><td>2</td><td>FN &gt;&gt; FP</td><td>Recall matters more (e.g. cancer detection)</td></tr>
+    </table>
+    <div class="formula" style="margin-top:12px;">F1 = 2 × (Precision × Recall) / (Precision + Recall)</div>
+  </div>
+  <div class="card">
+    <h2>The β Rule from Your Notes</h2>
+    <div class="two-col">
+      <div class="mini-card"><h3>Decrease β (e.g. 0.5)</h3><p>More importance to <strong>false positives</strong> → care more about Precision</p></div>
+      <div class="mini-card"><h3>Increase β (e.g. 2)</h3><p>More importance to <strong>false negatives</strong> → care more about Recall</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ROC & AUC -->
+<div id="roc" class="section">
+  <div class="card">
+    <h2>ROC Curve</h2>
+    <p>Shows <strong>how well the model separates classes</strong> across all possible thresholds.</p>
+    <div class="note-quote">AUC measures a model's ability to distinguish between classes.</div>
+  </div>
+  <div class="card">
+    <h2>AUC — Area Under Curve</h2>
+    <div class="auc-bar">
+      <div class="auc-marker" style="left:50%;"><div class="auc-label">0.5 — Random Guessing</div></div>
+      <div class="auc-marker" style="left:99%;"><div class="auc-label">1.0 — Perfect</div></div>
+    </div>
+    <table>
+      <tr><th>AUC</th><th>Meaning</th></tr>
+      <tr><td>0.5</td><td>Random guessing — useless</td></tr>
+      <tr><td>0.7 – 0.8</td><td>Acceptable</td></tr>
+      <tr><td>0.9+</td><td>Excellent</td></tr>
+      <tr><td>1.0</td><td>Perfect model</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h2>Assumptions of Logistic Regression</h2>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div class="step-body"><strong>Binary outcomes</strong> — 2 output classes</div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-body"><strong>Independent observations</strong> — each row should be unrelated to others</div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-body"><strong>No multicollinearity</strong> — features should not influence each other</div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-body"><strong>Large sample size preferred</strong> — probability estimates are unstable on small datasets</div></div>
+      <div class="step"><div class="step-num">5</div><div class="step-body"><strong>Linear relationship</strong> between predictors and <em>log-odds</em> (not probability directly)</div></div>
+    </div>
+    <div class="note-quote">Linearity in Logistic Regression = predictors have a linear relationship with log-odds, not with probability itself.</div>
+  </div>
+</div>
+
+<!-- CODE -->
+<div id="code" class="section">
+  <div class="card">
+    <h2>Linear Regression + Cross Validation</h2>
+    <pre><span class="cm-code"># Linear Regression with 5-fold Cross-Validation</span>
+<span class="kw">from</span> sklearn.linear_model <span class="kw">import</span> <span class="fn">LinearRegression</span>
+<span class="kw">from</span> sklearn.model_selection <span class="kw">import</span> <span class="fn">cross_val_score</span>
+<span class="kw">import</span> numpy <span class="kw">as</span> np
+
+lin_reg = <span class="fn">LinearRegression</span>()
+mse = <span class="fn">cross_val_score</span>(
+    lin_reg, X, y,
+    scoring=<span class="str">'neg_mean_squared_error'</span>,
+    cv=<span class="str">5</span>    <span class="cm-code"># 5-fold → 5 different MSE values</span>
+)
+mean_mse = np.<span class="fn">mean</span>(mse)
+<span class="fn">print</span>(mean_mse)
+
+lin_reg.<span class="fn">predict</span>(X_test)</pre>
+    <p style="font-size:0.78rem; color:#444;">cv=5 → 5 different train/test splits → take the mean MSE across all 5.</p>
+  </div>
+  <div class="card">
+    <h2>Ridge Regression</h2>
+    <pre><span class="kw">from</span> sklearn.linear_model <span class="kw">import</span> <span class="fn">Ridge</span>
+<span class="kw">from</span> sklearn.model_selection <span class="kw">import</span> <span class="fn">GridSearchCV</span>
+
+ridge = <span class="fn">Ridge</span>()
+<span class="cm-code"># Use GridSearchCV to find the best λ (alpha)</span>
+params = {<span class="str">'alpha'</span>: [0.01, 0.1, 1, 10, 100]}
+grid = <span class="fn">GridSearchCV</span>(ridge, params, cv=<span class="str">5</span>)
+grid.<span class="fn">fit</span>(X_train, y_train)</pre>
+  </div>
+  <div class="card">
+    <h2>Logistic Regression</h2>
+    <pre><span class="kw">from</span> sklearn.linear_model <span class="kw">import</span> <span class="fn">LogisticRegression</span>
+<span class="kw">from</span> sklearn.datasets <span class="kw">import</span> <span class="fn">load_breast_cancer</span>
+<span class="kw">from</span> sklearn.model_selection <span class="kw">import</span> <span class="fn">train_test_split</span>
+<span class="kw">from</span> sklearn.metrics <span class="kw">import</span> <span class="fn">classification_report</span>
+
+<span class="cm-code"># Load data</span>
+data = <span class="fn">load_breast_cancer</span>()
+X, y = data.data, data.target
+X_train, X_test, y_train, y_test = <span class="fn">train_test_split</span>(X, y, test_size=<span class="str">0.2</span>)
+
+<span class="cm-code"># Train</span>
+model = <span class="fn">LogisticRegression</span>()
+model.<span class="fn">fit</span>(X_train, y_train)
+
+<span class="cm-code"># Predict</span>
+y_pred  = model.<span class="fn">predict</span>(X_test)
+y_proba = model.<span class="fn">predict_proba</span>(X_test)
+
+<span class="cm-code"># Evaluate (shows precision, recall, F1)</span>
+<span class="fn">print</span>(<span class="fn">classification_report</span>(y_test, y_pred))</pre>
+  </div>
+</div>
+
+<script>
+  function show(id, el) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    el.classList.add('active');
+  }
+</script>
+
+</body>
+</html>
