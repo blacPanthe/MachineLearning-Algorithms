@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Linear Regression — Notes Explainer</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8f9fa; color: #1a1a1a; padding: 24px 16px; max-width: 720px; margin: 0 auto; }
+  h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 4px; }
+  .subtitle { font-size: 0.85rem; color: #888; margin-bottom: 20px; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
+  .tab { padding: 6px 14px; border-radius: 20px; border: 1.5px solid #ddd; background: #fff; font-size: 0.78rem; cursor: pointer; color: #444; font-weight: 500; transition: all 0.15s; }
+  .tab.active { background: #4f46e5; color: #fff; border-color: #4f46e5; }
+  .tab:hover:not(.active) { border-color: #4f46e5; color: #4f46e5; }
+  .section { display: none; }
+  .section.active { display: block; }
+  .card { background: #fff; border-radius: 12px; padding: 18px; margin-bottom: 14px; border: 1px solid #e8e8e8; }
+  .card h2 { font-size: 1rem; font-weight: 700; margin-bottom: 10px; color: #4f46e5; }
+  .card p { font-size: 0.85rem; line-height: 1.6; color: #444; margin-bottom: 6px; }
+  .formula { background: #f0effe; border-left: 3px solid #4f46e5; border-radius: 6px; padding: 10px 14px; font-family: 'Courier New', monospace; font-size: 0.88rem; color: #312e81; margin: 10px 0; }
+  .note-quote { background: #fef9c3; border-left: 3px solid #eab308; border-radius: 6px; padding: 10px 14px; font-size: 0.82rem; color: #78350f; margin: 10px 0; font-style: italic; }
+  .tag { display: inline-block; padding: 3px 10px; border-radius: 10px; font-size: 0.72rem; font-weight: 600; margin: 2px; }
+  .tag.good { background: #dcfce7; color: #166534; }
+  .tag.bad { background: #fee2e2; color: #991b1b; }
+  .tag.neutral { background: #e0e7ff; color: #3730a3; }
+  .steps { }
+  .step { display: flex; gap: 12px; margin-bottom: 12px; align-items: flex-start; }
+  .step-num { background: #4f46e5; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .step-body { font-size: 0.85rem; color: #444; line-height: 1.5; }
+  .step-body strong { color: #1a1a1a; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-top: 10px; }
+  th { background: #4f46e5; color: white; padding: 8px 12px; text-align: left; font-weight: 600; }
+  td { padding: 8px 12px; border-bottom: 1px solid #eee; color: #444; }
+  tr:last-child td { border-bottom: none; }
+  .mountain { display: flex; align-items: flex-end; justify-content: center; gap: 6px; height: 90px; margin: 14px 0; }
+  .bar-wrap { display: flex; flex-direction: column; align-items: center; }
+  .bar { background: #818cf8; border-radius: 4px 4px 0 0; width: 40px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 4px; }
+  .bar span { font-size: 0.65rem; color: white; font-weight: 700; }
+  .bar-label { font-size: 0.65rem; text-align: center; color: #888; margin-top: 3px; }
+  .valley-arrow { font-size: 0.75rem; color: #10b981; font-weight: 700; text-align: center; margin-top: 6px; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .metric-card { background: #f8f9fa; border: 1px solid #eee; border-radius: 10px; padding: 12px; }
+  .metric-card h3 { font-size: 0.82rem; font-weight: 700; color: #4f46e5; margin-bottom: 5px; }
+  .metric-card p { font-size: 0.78rem; color: #444; line-height: 1.4; }
+  .model-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 12px 0; }
+  .model-box { border-radius: 10px; padding: 12px; text-align: center; border: 1.5px solid; }
+  .model-box.over { background: #fef2f2; border-color: #f87171; }
+  .model-box.good-fit { background: #f0fdf4; border-color: #4ade80; }
+  .model-box.under { background: #fff7ed; border-color: #fb923c; }
+  .model-box h4 { font-size: 0.72rem; font-weight: 700; margin-bottom: 5px; }
+  .model-box p { font-size: 0.7rem; line-height: 1.4; color: #444; }
+  .model-box .verdict { font-size: 0.68rem; font-weight: 700; margin-top: 5px; }
+  .over .verdict { color: #dc2626; }
+  .good-fit .verdict { color: #16a34a; }
+  .under .verdict { color: #ea580c; }
+  .line-box { background: #f0effe; border-radius: 10px; padding: 14px; margin: 10px 0; }
+  .line-row { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 8px; font-size: 0.83rem; }
+  .line-letter { font-size: 1.2rem; font-weight: 900; color: #4f46e5; width: 22px; flex-shrink: 0; }
+  .line-text { color: #444; line-height: 1.4; }
+</style>
+</head>
+<body>
+<h1>📒 Linear Regression — From Your Notes</h1>
+<p class="subtitle">An interactive explainer based on handwritten notes</p>
+
+<div class="tabs">
+  <div class="tab active" onclick="show('basics', this)">Basics</div>
+  <div class="tab" onclick="show('error', this)">Error &amp; Cost</div>
+  <div class="tab" onclick="show('gradient', this)">Gradient Descent</div>
+  <div class="tab" onclick="show('multiple', this)">Multiple LR</div>
+  <div class="tab" onclick="show('metrics', this)">Metrics</div>
+  <div class="tab" onclick="show('regularize', this)">Ridge &amp; Lasso</div>
+</div>
+
+<!-- BASICS -->
+<div id="basics" class="section active">
+  <div class="card">
+    <h2>What is Regression?</h2>
+    <p>Used to <strong>predict continuous numerical values</strong>. When your target is a number (like salary, price, score), Linear Regression becomes the candidate.</p>
+  </div>
+  <div class="card">
+    <h2>5 Things Linear Regression Does</h2>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div class="step-body"><strong>Find relationship</strong> → X → Y (input to output)</div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-body"><strong>Create a line</strong> → y = mx + c</div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-body"><strong>Measure error</strong> → How wrong are predictions?</div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-body"><strong>Reduce error</strong> → Use optimization</div></div>
+      <div class="step"><div class="step-num">5</div><div class="step-body"><strong>Evaluate performance</strong> → R², RMSE, MAE, MSE</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>The Formula — Salary Example</h2>
+    <p>Predicted value = <strong>starting value</strong> + (change per unit) × input</p>
+    <div class="formula">Salary = 30,000 + 5,000 × (years experience)</div>
+    <p>Employee with <strong>4 years experience</strong>:</p>
+    <div class="formula">= 30,000 + 5,000 × 4 = 50,000</div>
+    <p style="margin-top:10px;"><span class="tag neutral">intercept = 30,000 (base salary)</span> <span class="tag neutral">slope = 5,000 (per year)</span></p>
+  </div>
+  <div class="card">
+    <h2>Residual (Error)</h2>
+    <p>Actual = 100, Predicted = 90</p>
+    <div class="formula">Residual = Actual − Predicted = 100 − 90 = 10</div>
+    <div class="note-quote">Regression is basically trying to make these errors as small as possible.</div>
+    <p>The coefficient = expected change in target for <strong>one unit increase</strong> in predictor, holding all others constant.</p>
+  </div>
+</div>
+
+<!-- ERROR & COST -->
+<div id="error" class="section">
+  <div class="card">
+    <h2>Why Not Just Draw Any Line?</h2>
+    <p>Different lines produce <strong>different errors</strong>. We need a systematic way to measure which line is best → that's the Cost Function.</p>
+  </div>
+  <div class="card">
+    <h2>Cost Function</h2>
+    <p>A mathematical function that measures <strong>how wrong a model's predictions are</strong>. For linear regression, the most common is:</p>
+    <div class="formula">MSE — Mean Squared Error</div>
+  </div>
+  <div class="card">
+    <h2>Why Square the Errors?</h2>
+    <p>Imagine errors of <strong>+10</strong> and <strong>−10</strong>:</p>
+    <div class="formula">Sum = +10 + (−10) = 0  ← Misleading!</div>
+    <p>Square them:</p>
+    <div class="formula">10² + 10² = 100 + 100 = 200  ← Honest!</div>
+    <p>Squaring also <strong>punishes large errors more</strong> than small ones.</p>
+  </div>
+  <div class="card">
+    <h2>MSE — "How Bad Is My Model?"</h2>
+    <div class="formula">MSE = average of all (actual − predicted)²</div>
+    <p><span class="tag good">Lower is better</span></p>
+  </div>
+</div>
+
+<!-- GRADIENT DESCENT -->
+<div id="gradient" class="section">
+  <div class="card">
+    <h2>The Mountain Analogy 🏔️</h2>
+    <p>To reach the lowest point (valley), feel the slope, walk downhill, repeat.</p>
+    <div class="mountain">
+      <div class="bar-wrap"><div class="bar" style="height:75px"><span>500</span></div><div class="bar-label">Start</div></div>
+      <div class="bar-wrap"><div class="bar" style="height:58px"><span>200</span></div><div class="bar-label"></div></div>
+      <div class="bar-wrap"><div class="bar" style="height:42px"><span>80</span></div><div class="bar-label"></div></div>
+      <div class="bar-wrap"><div class="bar" style="height:26px"><span>20</span></div><div class="bar-label"></div></div>
+      <div class="bar-wrap"><div class="bar" style="height:14px"><span>5</span></div><div class="bar-label"></div></div>
+      <div class="bar-wrap"><div class="bar" style="height:9px; background:#10b981"><span>4.9</span></div><div class="bar-label" style="color:#10b981">valley</div></div>
+    </div>
+    <div class="valley-arrow">Valley = Minimum Error = Gradient Descent found it!</div>
+  </div>
+  <div class="card">
+    <h2>Gradient = Slope of Cost Function</h2>
+    <div class="two-col" style="margin-top:6px;">
+      <div class="metric-card"><h3>Slope is +ve</h3><p>On the right side of the valley → move <strong>left</strong></p></div>
+      <div class="metric-card"><h3>Slope is −ve</h3><p>On the left side of the valley → move <strong>right</strong></p></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Learning Rate (Step Size)</h2>
+    <p>How big a step to take when walking downhill.</p>
+    <div class="formula">Good learning rates: 0.1 → 0.01 → 0.001</div>
+    <p><span class="tag bad">Too large</span> = overshoot &nbsp; <span class="tag bad">Too small</span> = takes forever</p>
+  </div>
+  <div class="card">
+    <h2>Convergence</h2>
+    <p>When additional iterations <strong>no longer significantly reduce error</strong> → training stops.</p>
+    <div class="note-quote">500 → 200 → 80 → 20 → 5 → 4.9 → 4.89 → 4.889 ← converging</div>
+    <p><strong>For linear regression only one minimum exists</strong> — no local minima trap!</p>
+  </div>
+</div>
+
+<!-- MULTIPLE LR -->
+<div id="multiple" class="section">
+  <div class="card">
+    <h2>Multiple Linear Regression</h2>
+    <p>Real world has many features. Score depends on:</p>
+    <p style="margin-top:8px;"><span class="tag neutral">Hours studied</span> <span class="tag neutral">Attendance</span> <span class="tag neutral">Sleep</span> <span class="tag neutral">Assignments</span></p>
+    <div class="formula">y = β₀ + β₁x₁ + β₂x₂ + β₃x₃ + ...</div>
+  </div>
+  <div class="card">
+    <h2>LINE Assumptions</h2>
+    <div class="line-box">
+      <div class="line-row"><div class="line-letter">L</div><div class="line-text"><strong>Linear relationship</strong> — between predictors &amp; target</div></div>
+      <div class="line-row"><div class="line-letter">I</div><div class="line-text"><strong>Independence</strong> — observations should not be correlated with each other</div></div>
+      <div class="line-row"><div class="line-letter">N</div><div class="line-text"><strong>Normal residuals</strong> — approximately normally distributed around zero</div></div>
+      <div class="line-row"><div class="line-letter">E</div><div class="line-text"><strong>Equal variance</strong> (Homoscedasticity) — constant variance across all predictor levels</div></div>
+    </div>
+    <p style="font-size:0.82rem; color:#444; margin-top:6px;">Plus: <strong>No multicollinearity</strong></p>
+  </div>
+  <div class="card">
+    <h2>Multicollinearity ⚠️</h2>
+    <p>Predictors should <strong>not be highly correlated</strong> with each other. Using age + years of experience together creates problems.</p>
+    <div class="two-col" style="margin-top:8px;">
+      <div class="metric-card"><h3>Symptoms</h3><p>Weird coefficients<br>Large P-values<br>High standard errors</p></div>
+      <div class="metric-card"><h3>Solutions</h3><p>Remove a variable<br>Feature selection<br>VIF analysis</p></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Overfitting vs Underfitting</h2>
+    <div class="model-row">
+      <div class="model-box over"><h4>Overfitting</h4><p>Train 99%<br>Test 60%</p><div class="verdict">Low Bias<br>High Variance</div></div>
+      <div class="model-box good-fit"><h4>✓ Just Right</h4><p>Train 92%<br>Test 91%</p><div class="verdict">Low Bias<br>Low Variance</div></div>
+      <div class="model-box under"><h4>Underfitting</h4><p>Train 70%<br>Test 65%</p><div class="verdict">High Bias<br>High Variance</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- METRICS -->
+<div id="metrics" class="section">
+  <div class="card">
+    <h2>Performance Metrics</h2>
+    <div class="two-col">
+      <div class="metric-card"><h3>MAE</h3><p>Average absolute error. Easy to explain. Average prediction mistake.</p></div>
+      <div class="metric-card"><h3>MSE</h3><p>Average squared error. Punishes large mistakes more heavily.</p></div>
+      <div class="metric-card"><h3>RMSE</h3><p>√MSE. Most practical — same unit as target variable.</p></div>
+      <div class="metric-card"><h3>R²</h3><p>% of variance explained by model. Higher is better.</p></div>
+    </div>
+    <div class="note-quote" style="margin-top:12px;">RMSE &gt; MAE &gt; MSE (order of preference for practical use)</div>
+  </div>
+  <div class="card">
+    <h2>R² — "How Much Did My Model Understand?"</h2>
+    <div class="formula">R² = 0.80 → 80% variance explained, 20% unexplained</div>
+    <table>
+      <tr><th>R² Value</th><th>Meaning</th></tr>
+      <tr><td>0</td><td>Useless</td></tr>
+      <tr><td>0.5</td><td>Moderate</td></tr>
+      <tr><td>0.8</td><td>Strong</td></tr>
+      <tr><td>1.0</td><td>Perfect</td></tr>
+    </table>
+    <p style="margin-top:10px; font-size:0.82rem;"><span class="tag bad">Problem:</span> Adding ANY variable (even useless ones) always increases R²!</p>
+  </div>
+  <div class="card">
+    <h2>Adjusted R²</h2>
+    <p>Punishes unnecessary predictors. If a new variable is useless → Adjusted R² <strong>decreases</strong>.</p>
+    <div class="note-quote">Adjusted R² accounts for model complexity whereas R² does not.</div>
+  </div>
+  <div class="card">
+    <h2>When NOT to Use Linear Regression</h2>
+    <p><span class="tag bad">Target is categorical</span> <span class="tag bad">Highly non-linear</span> <span class="tag bad">Severe outliers</span> <span class="tag bad">Strong multicollinearity</span></p>
+  </div>
+</div>
+
+<!-- REGULARIZATION -->
+<div id="regularize" class="section">
+  <div class="card">
+    <h2>Why Regularization?</h2>
+    <p>When there are many predictors or multicollinearity, linear regression may overfit. Ridge &amp; Lasso add a <em>penalty</em> to the cost function.</p>
+  </div>
+  <div class="card">
+    <h2>Ridge Regression (L2)</h2>
+    <p>Prevents overfitting by <strong>shrinking the slope</strong>. Never zeroes out coefficients.</p>
+    <div class="formula">Cost = (ŷ − y)² + λ(slope)²</div>
+    <p>λ is a hyperparameter found via cross-validation.</p>
+    <p style="margin-top:8px; font-size:0.82rem;">Ridge does <strong>not</strong> perform feature selection.</p>
+  </div>
+  <div class="card">
+    <h2>Lasso Regression (L1)</h2>
+    <p>Prevents overfitting AND performs <strong>feature selection</strong> by shrinking some coefficients to exactly zero.</p>
+    <div class="formula">Cost = (ŷ − y)² + λ|slope|</div>
+    <p style="margin-top:8px;"><span class="tag good">Performs feature selection</span> <span class="tag neutral">Ridge does not</span></p>
+  </div>
+  <div class="card">
+    <h2>Ridge vs Lasso Summary</h2>
+    <table>
+      <tr><th></th><th>Ridge (L2)</th><th>Lasso (L1)</th></tr>
+      <tr><td>Prevents overfitting</td><td>✅</td><td>✅</td></tr>
+      <tr><td>Feature selection</td><td>❌</td><td>✅</td></tr>
+      <tr><td>Shrinks to exactly zero</td><td>❌</td><td>✅</td></tr>
+      <tr><td>Penalty term</td><td>λ(slope)²</td><td>λ|slope|</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h2>Assumptions for Best Results</h2>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div class="step-body"><strong>Normal distribution</strong> — model trains well with Gaussian data</div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-body"><strong>Standardization</strong> — scale data using Z-score (μ=0, σ=1)</div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-body"><strong>Linearity</strong> — relationship between features and target is linear</div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-body"><strong>No multicollinearity</strong> — predictors should not be highly correlated</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+function show(id, el) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  el.classList.add('active');
+}
+</script>
+</body>
+</html>
