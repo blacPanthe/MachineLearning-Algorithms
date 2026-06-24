@@ -5,3 +5,4 @@ Mini-projects exploring machine learning algorithms — each folder has the code
 ## Projects
 
 - [Linear Regression](Linear%20Regression/) — code + [notes](https://blacpanthe.github.io/MachineLearning-Algorithms/Linear%20Regression/notes.html)
+- [Logistic Regression](Logistic%20Regression/) — code + [notes](Logistic%20Regression/code_explained.md)
