@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K Nearest Neighbour — Notes Explainer</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8f9fa; color: #1a1a1a; padding: 24px 16px; max-width: 720px; margin: 0 auto; }
+  h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 4px; }
+  .subtitle { font-size: 0.85rem; color: #888; margin-bottom: 20px; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
+  .tab { padding: 6px 14px; border-radius: 20px; border: 1.5px solid #ddd; background: #fff; font-size: 0.78rem; cursor: pointer; color: #444; font-weight: 500; transition: all 0.15s; }
+  .tab.active { background: #0891b2; color: #fff; border-color: #0891b2; }
+  .tab:hover:not(.active) { border-color: #0891b2; color: #0891b2; }
+  .section { display: none; }
+  .section.active { display: block; }
+  .card { background: #fff; border-radius: 12px; padding: 18px; margin-bottom: 14px; border: 1px solid #e8e8e8; }
+  .card h2 { font-size: 1rem; font-weight: 700; margin-bottom: 10px; color: #0891b2; }
+  .card p { font-size: 0.85rem; line-height: 1.6; color: #444; margin-bottom: 6px; }
+  .formula { background: #ecfeff; border-left: 3px solid #0891b2; border-radius: 6px; padding: 10px 14px; font-family: 'Courier New', monospace; font-size: 0.88rem; color: #155e63; margin: 10px 0; }
+  .note-quote { background: #fef9c3; border-left: 3px solid #eab308; border-radius: 6px; padding: 10px 14px; font-size: 0.82rem; color: #78350f; margin: 10px 0; font-style: italic; }
+  .tag { display: inline-block; padding: 3px 10px; border-radius: 10px; font-size: 0.72rem; font-weight: 600; margin: 2px; }
+  .tag.good { background: #dcfce7; color: #166534; }
+  .tag.bad { background: #fee2e2; color: #991b1b; }
+  .tag.neutral { background: #cffafe; color: #0e7490; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .mini-card { background: #f8f9fa; border: 1px solid #eee; border-radius: 10px; padding: 12px; }
+  .mini-card h3 { font-size: 0.82rem; font-weight: 700; color: #0891b2; margin-bottom: 5px; }
+  .mini-card p { font-size: 0.78rem; color: #444; line-height: 1.4; }
+  .steps { }
+  .step { display: flex; gap: 12px; margin-bottom: 12px; align-items: flex-start; }
+  .step-num { background: #0891b2; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .step-body { font-size: 0.85rem; color: #444; line-height: 1.5; }
+  .step-body strong { color: #1a1a1a; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-top: 10px; }
+  th { background: #0891b2; color: white; padding: 8px 12px; text-align: left; font-weight: 600; }
+  td { padding: 8px 12px; border-bottom: 1px solid #eee; color: #444; }
+  tr:last-child td { border-bottom: none; }
+  pre { background: #0c2530; color: #99f6e4; border-radius: 10px; padding: 14px; font-size: 0.78rem; overflow-x: auto; margin: 10px 0; line-height: 1.7; }
+  pre .kw { color: #67e8f9; }
+  pre .fn { color: #6ee7b7; }
+  pre .str { color: #fbbf24; }
+  pre .cm-code { color: #7dd3fc; }
+  .k-grid { display: flex; justify-content: center; gap: 16px; margin: 14px 0; }
+  .k-dot { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; color: white; }
+</style>
+</head>
+<body>
+
+<h1>📒 K Nearest Neighbour — From Your Notes</h1>
+<p class="subtitle">An interactive explainer for KNN classification</p>
+
+<div class="tabs">
+  <div class="tab active" onclick="show('idea', this)">Core Idea</div>
+  <div class="tab" onclick="show('distance', this)">Distance Metrics</div>
+  <div class="tab" onclick="show('choosingk', this)">Choosing K</div>
+  <div class="tab" onclick="show('scaling', this)">Why Scaling Matters</div>
+  <div class="tab" onclick="show('tradeoffs', this)">Pros &amp; Cons</div>
+  <div class="tab" onclick="show('curse', this)">Curse of Dimensionality</div>
+  <div class="tab" onclick="show('code', this)">sklearn Code</div>
+</div>
+
+<!-- CORE IDEA -->
+<div id="idea" class="section active">
+  <div class="card">
+    <h2>KNN Has No "Model" — It Just Remembers</h2>
+    <p>Linear Regression learns weights. Logistic Regression learns a sigmoid curve. KNN learns <strong>nothing in advance</strong> — it just stores the entire training set.</p>
+    <div class="note-quote">KNN is called a "lazy learner": all the work happens at prediction time, not training time.</div>
+  </div>
+  <div class="card">
+    <h2>How a Prediction Is Made</h2>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div class="step-body">A new point arrives that needs a prediction.</div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-body">Measure the <strong>distance</strong> from this point to every point in the training set.</div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-body">Pick the <strong>K closest</strong> training points (the "neighbors").</div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-body"><strong>Vote:</strong> the new point gets the majority class among those K neighbors.</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Example: K = 5</h2>
+    <div class="k-grid">
+      <div class="k-dot" style="background:#16a34a;">good</div>
+      <div class="k-dot" style="background:#16a34a;">good</div>
+      <div class="k-dot" style="background:#dc2626;">bad</div>
+      <div class="k-dot" style="background:#16a34a;">good</div>
+      <div class="k-dot" style="background:#dc2626;">bad</div>
+    </div>
+    <p style="text-align:center;">3 "good" vs 2 "bad" among the 5 nearest neighbors → predict <strong>good</strong></p>
+  </div>
+</div>
+
+<!-- DISTANCE METRICS -->
+<div id="distance" class="section">
+  <div class="card">
+    <h2>Euclidean Distance (default)</h2>
+    <div class="formula">d(p, q) = √[ (p₁−q₁)² + (p₂−q₂)² + ... + (pₙ−qₙ)² ]</div>
+    <p>The straight-line distance between two points across all feature dimensions. This is what sklearn's <code>KNeighborsClassifier</code> uses by default.</p>
+  </div>
+  <div class="card">
+    <h2>Manhattan Distance</h2>
+    <div class="formula">d(p, q) = |p₁−q₁| + |p₂−q₂| + ... + |pₙ−qₙ|</div>
+    <p>Sums absolute differences instead of squaring them — like navigating a city grid instead of cutting diagonally. Less sensitive to outliers in any single feature.</p>
+  </div>
+  <div class="card">
+    <h2>Minkowski Distance</h2>
+    <p>A general formula that includes both of the above as special cases:</p>
+    <div class="formula">p = 1 → Manhattan
+p = 2 → Euclidean</div>
+    <p style="margin-top:8px;">sklearn's <code>p</code> parameter on <code>KNeighborsClassifier</code> controls this directly.</p>
+  </div>
+</div>
+
+<!-- CHOOSING K -->
+<div id="choosingk" class="section">
+  <div class="card">
+    <h2>The K Trade-off</h2>
+    <div class="two-col">
+      <div class="mini-card">
+        <h3>Small K (e.g. K=1)</h3>
+        <p><span class="tag bad">Overfits</span> Very sensitive to noise — a single mislabeled neighbor flips the prediction.</p>
+      </div>
+      <div class="mini-card">
+        <h3>Large K (e.g. K=100)</h3>
+        <p><span class="tag bad">Underfits</span> Smooths out local patterns — minority classes get drowned out by the majority vote.</p>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>How to Pick K in Practice</h2>
+    <p>Try a range of K values (e.g. 1 to 30), measure accuracy (or a better metric) on a validation/test set for each, and pick whichever K performs best.</p>
+    <div class="note-quote">There's no formula for the "right" K — it's found empirically, by testing.</div>
+  </div>
+  <div class="card">
+    <h2>A Useful Rule of Thumb</h2>
+    <p>Use an <strong>odd K</strong> for binary classification, so a tie vote (e.g. 2 vs 2) can't happen.</p>
+  </div>
+</div>
+
+<!-- WHY SCALING MATTERS -->
+<div id="scaling" class="section">
+  <div class="card">
+    <h2>Distance Is the Whole Model — So Scale Matters MORE Here</h2>
+    <p>In Linear/Logistic Regression, scaling makes coefficients <em>comparable</em>, but the model can still fit correctly without it. In KNN, scaling affects the prediction itself.</p>
+    <div class="note-quote">If one feature ranges 0-1000 and another ranges 0-1, the big feature alone decides who's a "neighbor" — the small feature is effectively ignored.</div>
+  </div>
+  <div class="card">
+    <h2>Example</h2>
+    <p>Comparing wines by "total sulfur dioxide" (0-300) and "chlorides" (0.01-0.6) without scaling:</p>
+    <div class="formula">distance ≈ |Δ sulfur dioxide|   (chlorides difference is mathematically negligible)</div>
+    <p style="margin-top:8px;">After <code>StandardScaler</code>, both features contribute roughly equally to the distance calculation.</p>
+  </div>
+</div>
+
+<!-- PROS & CONS -->
+<div id="tradeoffs" class="section">
+  <div class="card">
+    <h2>Advantages</h2>
+    <table>
+      <tr><th>Advantage</th><th>Why</th></tr>
+      <tr><td>Simple to understand</td><td>No equations to derive — just distance and voting</td></tr>
+      <tr><td>No training step</td><td>"Fitting" is just storing the data</td></tr>
+      <tr><td>Naturally multi-class</td><td>Works the same with 2 classes or 10</td></tr>
+      <tr><td>Captures non-linear boundaries</td><td>No assumption of a straight line or sigmoid shape</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h2>Disadvantages</h2>
+    <table>
+      <tr><th>Disadvantage</th><th>Why</th></tr>
+      <tr><td>Slow at prediction time</td><td>Must compute distance to every training point, every time</td></tr>
+      <tr><td>Memory heavy</td><td>The entire training set must be kept around</td></tr>
+      <tr><td>Sensitive to irrelevant features</td><td>Every feature affects distance, even useless ones</td></tr>
+      <tr><td>Struggles with imbalanced classes</td><td>Majority class dominates the vote in ambiguous regions</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- CURSE OF DIMENSIONALITY -->
+<div id="curse" class="section">
+  <div class="card">
+    <h2>The Curse of Dimensionality</h2>
+    <p>As you add more features (dimensions), distances between points become less meaningful — everything starts looking roughly equidistant from everything else.</p>
+    <div class="note-quote">In very high dimensions, "nearest" neighbor stops being a useful concept — there's no longer a clear "near" and "far."</div>
+  </div>
+  <div class="card">
+    <h2>Why This Happens</h2>
+    <p>The volume of space grows exponentially with each added dimension, so data points spread out and the gaps between them become more uniform. With only a handful of features (like the 11 wine measurements here), this isn't a big problem — but with hundreds of features, KNN's distance calculation can break down.</p>
+  </div>
+  <div class="card">
+    <h2>Mitigations</h2>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div class="step-body"><strong>Feature selection</strong> — drop irrelevant features before computing distance</div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-body"><strong>Dimensionality reduction</strong> — e.g. PCA, to compress features first</div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-body"><strong>More data</strong> — higher dimensions need exponentially more points to stay "dense"</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- CODE -->
+<div id="code" class="section">
+  <div class="card">
+    <h2>Basic KNN Classifier</h2>
+    <pre><span class="cm-code"># K Nearest Neighbour classifier</span>
+<span class="kw">from</span> sklearn.neighbors <span class="kw">import</span> <span class="fn">KNeighborsClassifier</span>
+<span class="kw">from</span> sklearn.preprocessing <span class="kw">import</span> <span class="fn">StandardScaler</span>
+
+<span class="cm-code"># Scaling is essential — KNN is distance-based</span>
+scaler = <span class="fn">StandardScaler</span>()
+X_train = scaler.<span class="fn">fit_transform</span>(X_train)
+X_test  = scaler.<span class="fn">transform</span>(X_test)
+
+model = <span class="fn">KNeighborsClassifier</span>(n_neighbors=<span class="str">5</span>)
+model.<span class="fn">fit</span>(X_train, y_train)
+
+y_pred  = model.<span class="fn">predict</span>(X_test)
+y_proba = model.<span class="fn">predict_proba</span>(X_test)</pre>
+  </div>
+  <div class="card">
+    <h2>Finding the Best K</h2>
+    <pre><span class="kw">import</span> numpy <span class="kw">as</span> np
+
+accuracies = []
+<span class="kw">for</span> k <span class="kw">in</span> <span class="fn">range</span>(<span class="str">1</span>, <span class="str">31</span>):
+    knn_k = <span class="fn">KNeighborsClassifier</span>(n_neighbors=k)
+    knn_k.<span class="fn">fit</span>(X_train, y_train)
+    accuracies.<span class="fn">append</span>(knn_k.<span class="fn">score</span>(X_test, y_test))
+
+best_k = <span class="fn">range</span>(<span class="str">1</span>, <span class="str">31</span>)[np.<span class="fn">argmax</span>(accuracies)]
+<span class="fn">print</span>(<span class="str">"Best K:"</span>, best_k)</pre>
+  </div>
+  <div class="card">
+    <h2>Choosing a Distance Metric</h2>
+    <pre><span class="cm-code"># p=1 -> Manhattan, p=2 -> Euclidean (default)</span>
+model = <span class="fn">KNeighborsClassifier</span>(n_neighbors=<span class="str">5</span>, p=<span class="str">1</span>)</pre>
+  </div>
+</div>
+
+<script>
+  function show(id, el) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    el.classList.add('active');
+  }
+</script>
+
+</body>
+</html>
